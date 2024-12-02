@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Webhook Dashboard</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+  </head>
+  <body data-theme="dark">
+    <header class="header">
+      <h1>Webhook Dashboard</h1>
+    </header>
+
+    <!-- Tab Navigation -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('dashboard')">Dashboard</div>
+      <div class="tab" onclick="switchTab('configuration')">Configuration</div>
+      <div class="tab" onclick="switchTab('logs')">Logs</div>
+      <button
+        onclick="toggleTheme()"
+        class="theme-toggle-btn"
+        aria-label="Toggle Theme"
+      >
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+
+    <!-- Dashboard Tab -->
+    <div id="dashboard" class="tab-content active">
+      <section id="requests" class="requests-section">
+        <p class="no-data-message">
+          No requests received yet. Send a webhook to get started!
+        </p>
+      </section>
+    </div>
+
+    <!-- Configuration Tab -->
+    <div id="configuration" class="tab-content">
+      <form action="/configure" method="POST">
+        <label for="body">Custom Response Body:</label>
+        <textarea id="body" name="body" rows="4">
+{
+  "status": "ok"
+}
+</textarea
+        >
+
+        <label for="headers">Custom Headers (JSON format):</label>
+        <textarea id="headers" name="headers" rows="4">
+{
+  "content-type": "application/json"
+}
+</textarea
+        >
+
+        <label for="auth">Authorization Header:</label>
+        <input type="text" id="auth" name="auth" />
+
+        <label for="cookies">Custom Cookies (JSON format):</label>
+        <textarea id="cookies" name="cookies" rows="4"></textarea>
+
+        <button type="submit">Save Configuration</button>
+      </form>
+    </div>
+
+    <!-- Logs Tab -->
+    <div id="logs" class="tab-content">
+      <p>Logs coming soon...</p>
+    </div>
+
+    <script>
+      function switchTab(tabId) {
+        document.querySelectorAll(".tab-content").forEach((tab) => {
+          tab.classList.remove("active");
+        });
+        document.querySelectorAll(".tab").forEach((tab) => {
+          tab.classList.remove("active");
+        });
+        document.getElementById(tabId).classList.add("active");
+        document
+          .querySelector(`.tab[onclick="switchTab('${tabId}')"]`)
+          .classList.add("active");
+      }
+
+      const socket = io();
+
+      // Update the UI when a new event is received
+      socket.on("newEvent", (data) => {
+        const requestsDiv = document.getElementById("requests");
+        const noDataMessage = document.querySelector(".no-data-message");
+
+        if (noDataMessage) noDataMessage.remove();
+
+        const methodClass = `method-${data.method.toLowerCase()}`;
+
+        const requestHTML = `
+          <div class="request-card ${methodClass}">
+            <div class="request-header">
+              <h2>${data.method}</h2>
+              <pre>${data.url}</pre>
+              <span>${data.timestamp}</span>
+            </div>
+            <div class="request-body">
+              <h3>Headers</h3>
+              <pre>${JSON.stringify(data.headers, null, 2)}</pre>
+              ${
+                Object.keys(data.cookies || {}).length > 0
+                  ? `<h3>Cookies</h3>
+                    <pre>${JSON.stringify(data.cookies, null, 2)}</pre>
+                  `
+                  : ""
+              }
+              ${
+                data.body
+                  ? `<h3>Body</h3>
+                <pre>${JSON.stringify(data.body, null, 2)}</pre>`
+                  : ""
+              }
+            </div>
+          </div>`;
+        requestsDiv.insertAdjacentHTML("afterbegin", requestHTML);
+      });
+
+      // Theme toggle functionality
+      function toggleTheme() {
+        const body = document.body;
+        const themeIcon = document.querySelector(".theme-toggle-btn i");
+
+        if (body.getAttribute("data-theme") === "dark") {
+          body.setAttribute("data-theme", "light");
+          themeIcon.classList.replace("fa-moon", "fa-sun");
+        } else {
+          body.setAttribute("data-theme", "dark");
+          themeIcon.classList.replace("fa-sun", "fa-moon");
+        }
+      }
+    </script>
+  </body>
+</html>
