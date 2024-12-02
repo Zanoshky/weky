@@ -1,4 +1,4 @@
-# Webhook Dashboard
+# Web Hook Echo UI Dashboard 
 
 A modern, lightweight, and user-friendly dashboard for receiving, visualizing, and managing webhook events. This project provides a real-time interface to inspect incoming webhooks, configure custom responses, and view event logs.
 
